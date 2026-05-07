@@ -1,8 +1,8 @@
-name: Build and Push Backend Image
+name: Build and Push Frontend Image
 
 on:
   push:
-    branches: ["main"]
+    branches: ["master"]
 
 jobs:
   build:
