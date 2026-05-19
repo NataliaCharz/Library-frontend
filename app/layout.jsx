@@ -26,7 +26,7 @@ function LayoutWrapper({children}) {
     useEffect(() => {
         if (!user) return;
 
-        const eventSource = new EventSource("https://localhost:8443/api/notifications", {
+        const eventSource = new EventSource("/api/notifications", {
             withCredentials: true,
         });
 
