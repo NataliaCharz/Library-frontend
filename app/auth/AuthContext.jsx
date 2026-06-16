@@ -12,35 +12,31 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
     const router = useRouter();
 
-    const fetchUser = async () => {
-        try {
-            const res = await api.get("/auth/me");
-            setUser(res.data);
-        } catch (err) {
-            console.log("No user or invalid token", err);
-            toast.error("You are not logged in.");
-            router.push("/");
-            setUser(null);
-        } finally {
-            setLoading(false);
-        }
-    };
-
     useEffect(() => {
-        fetchUser();
+        const token = localStorage.getItem("token");
+        if (!token) {
+            setLoading(false);
+            return;
+        }
+        api.get("/auth/me")
+            .then(res => setUser({ username: res.data.username, role: res.data.role }))
+            .catch(() => {
+                localStorage.removeItem("token");
+                setUser(null);
+            })
+            .finally(() => setLoading(false));
     }, []);
 
     const login = async (credentials) => {
         try {
             const res = await api.post("/auth/login", credentials);
+            localStorage.setItem("token", res.data.token);
             const userData = { username: res.data.username, role: res.data.role };
             setUser(userData);
             if (res.data.role === "ADMIN") {
                 router.push("/admin");
-            } else if (res.data.role === "USER") {
-                router.push("/user");
             } else {
-                router.push("/");
+                router.push("/user");
             }
         } catch (err) {
             console.error("Login failed", err);
@@ -51,10 +47,10 @@ export const AuthProvider = ({ children }) => {
     const register = async (credentials) => {
         try {
             const res = await api.post("/auth/register", credentials);
+            localStorage.setItem("token", res.data.token);
             const userData = { username: res.data.username, role: res.data.role };
             setUser(userData);
-            toast.success("Registered.");
-
+            toast.success("Registered successfully.");
             if (res.data.role === "ADMIN") {
                 router.push("/admin");
             } else {
@@ -69,12 +65,12 @@ export const AuthProvider = ({ children }) => {
     const logout = async () => {
         try {
             await api.post("/auth/logout");
-            setUser(null);
-            router.push("/");
-        } catch (err) {
-            console.error("Logout failed", err);
-            toast.error("Could not logout.");
+        } catch {
+            // ignore
         }
+        localStorage.removeItem("token");
+        setUser(null);
+        router.push("/");
     };
 
     return (
@@ -85,5 +81,3 @@ export const AuthProvider = ({ children }) => {
 };
 
 export const useAuth = () => useContext(AuthContext);
-
-
