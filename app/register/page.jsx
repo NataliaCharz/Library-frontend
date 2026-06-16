@@ -9,6 +9,7 @@ export default function RegisterPage() {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
+    const [loading, setLoading] = useState(false);
 
     const handleRegister = async (e) => {
         e.preventDefault();
@@ -18,10 +19,12 @@ export default function RegisterPage() {
             return;
         }
 
+        setLoading(true);
         try {
             await register({ username, password });
         } catch {
-            toast.error("Registration failed");
+            toast.error("Registration failed. Username may already exist.");
+            setLoading(false);
         }
     };
 
@@ -49,10 +52,10 @@ export default function RegisterPage() {
                     placeholder="Confirm Password"
                     required
                 />
-                <button type="submit">Register</button>
+                <button type="submit" disabled={loading}>
+                    {loading ? "Creating account..." : "Register"}
+                </button>
             </form>
         </div>
     );
 }
-
-

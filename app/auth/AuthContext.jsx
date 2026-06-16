@@ -2,15 +2,13 @@
 
 import { createContext, useContext, useState, useEffect } from "react";
 import api from "../api/axios";
-import { useRouter } from "next/navigation";
-import toast from "react-hot-toast";
+import { generateCodeVerifier, generateCodeChallenge, buildAuthUrl, buildLogoutUrl } from "./pkce";
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
-    const router = useRouter();
 
     useEffect(() => {
         const token = localStorage.getItem("token");
@@ -27,54 +25,31 @@ export const AuthProvider = ({ children }) => {
             .finally(() => setLoading(false));
     }, []);
 
-    const login = async (credentials) => {
-        try {
-            const res = await api.post("/auth/login", credentials);
-            localStorage.setItem("token", res.data.token);
-            const userData = { username: res.data.username, role: res.data.role };
-            setUser(userData);
-            if (res.data.role === "ADMIN") {
-                router.push("/admin");
-            } else {
-                router.push("/user");
-            }
-        } catch (err) {
-            console.error("Login failed", err);
-            throw err;
-        }
+    const login = async () => {
+        const verifier = generateCodeVerifier();
+        const challenge = await generateCodeChallenge(verifier);
+        sessionStorage.setItem("pkce_verifier", verifier);
+        window.location.href = buildAuthUrl(challenge);
     };
 
     const register = async (credentials) => {
-        try {
-            const res = await api.post("/auth/register", credentials);
-            localStorage.setItem("token", res.data.token);
-            const userData = { username: res.data.username, role: res.data.role };
-            setUser(userData);
-            toast.success("Registered successfully.");
-            if (res.data.role === "ADMIN") {
-                router.push("/admin");
-            } else {
-                router.push("/user");
-            }
-        } catch (err) {
-            console.error("Register failed", err);
-            throw err;
-        }
+        await api.post("/auth/register", credentials);
+        await login();
     };
 
-    const logout = async () => {
-        try {
-            await api.post("/auth/logout");
-        } catch {
-            // ignore
-        }
+    const logout = () => {
+        const logoutUrl = buildLogoutUrl();
         localStorage.removeItem("token");
         setUser(null);
-        router.push("/");
+        window.location.href = logoutUrl;
+    };
+
+    const setUserFromToken = (userData) => {
+        setUser(userData);
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, register, logout, loading }}>
+        <AuthContext.Provider value={{ user, login, register, logout, loading, setUserFromToken }}>
             {children}
         </AuthContext.Provider>
     );
