@@ -35,6 +35,25 @@ export function buildAuthUrl(challenge) {
     return `${keycloakUrl}/realms/${realm}/protocol/openid-connect/auth?${params}`;
 }
 
+export function buildRegisterUrl(challenge) {
+    const keycloakUrl = process.env.NEXT_PUBLIC_KEYCLOAK_URL;
+    const realm = process.env.NEXT_PUBLIC_KEYCLOAK_REALM;
+    const clientId = process.env.NEXT_PUBLIC_KEYCLOAK_CLIENT_ID;
+    const redirectUri = `${window.location.origin}/callback`;
+
+    const params = new URLSearchParams({
+        client_id: clientId,
+        response_type: "code",
+        scope: "openid",
+        redirect_uri: redirectUri,
+        code_challenge: challenge,
+        code_challenge_method: "S256",
+        action: "register",
+    });
+
+    return `${keycloakUrl}/realms/${realm}/protocol/openid-connect/auth?${params}`;
+}
+
 export async function exchangeCodeForToken(code) {
     const keycloakUrl = process.env.NEXT_PUBLIC_KEYCLOAK_URL;
     const realm = process.env.NEXT_PUBLIC_KEYCLOAK_REALM;

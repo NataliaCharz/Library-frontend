@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useEffect } from "react";
 import api from "../api/axios";
-import { generateCodeVerifier, generateCodeChallenge, buildAuthUrl, buildLogoutUrl } from "./pkce";
+import { generateCodeVerifier, generateCodeChallenge, buildAuthUrl, buildRegisterUrl, buildLogoutUrl } from "./pkce";
 
 const AuthContext = createContext();
 
@@ -32,9 +32,11 @@ export const AuthProvider = ({ children }) => {
         window.location.href = buildAuthUrl(challenge);
     };
 
-    const register = async (credentials) => {
-        await api.post("/auth/register", credentials);
-        await login();
+    const register = async () => {
+        const verifier = generateCodeVerifier();
+        const challenge = await generateCodeChallenge(verifier);
+        sessionStorage.setItem("pkce_verifier", verifier);
+        window.location.href = buildRegisterUrl(challenge);
     };
 
     const logout = () => {
