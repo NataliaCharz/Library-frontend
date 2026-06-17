@@ -1,9 +1,18 @@
 "use client";
 
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "../auth/AuthContext";
 
 export default function LoginPage() {
-    const { login } = useAuth();
+    const { login, user, loading } = useAuth();
+    const router = useRouter();
+
+    useEffect(() => {
+        if (!loading && user) {
+            router.replace(user.role === "ADMIN" ? "/admin" : "/user");
+        }
+    }, [user, loading]);
 
     return (
         <div>

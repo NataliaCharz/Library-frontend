@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../auth/AuthContext";
 import { exchangeCodeForToken } from "../auth/pkce";
@@ -10,6 +10,7 @@ import toast from "react-hot-toast";
 export default function CallbackPage() {
     const router = useRouter();
     const { setUserFromToken } = useAuth();
+    const [destination, setDestination] = useState(null);
 
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
@@ -35,17 +36,20 @@ export default function CallbackPage() {
             })
             .then(res => {
                 setUserFromToken({ username: res.data.username, role: res.data.role });
-                if (res.data.role === "ADMIN") {
-                    router.replace("/admin");
-                } else {
-                    router.replace("/user");
-                }
+                setDestination(res.data.role === "ADMIN" ? "/admin" : "/user");
             })
             .catch(() => {
                 toast.error("Login failed. Please try again.");
                 router.replace("/login");
             });
     }, []);
+
+    // Navigate only after React commits the user state update
+    useEffect(() => {
+        if (destination) {
+            router.replace(destination);
+        }
+    }, [destination]);
 
     return (
         <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
